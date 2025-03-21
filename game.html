@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shell Game</title>
+    <style>
+        body {
+            text-align: center;
+            font-family: 'Poppins', sans-serif;
+            background: radial-gradient(circle, #1a1a2e, #16213e);
+            color: #ecf0f1;
+            margin: 0;
+            overflow: hidden;
+        }
+        h1 {
+            font-size: 2.5rem;
+            margin-top: 20px;
+        }
+        .game-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-top: 20px;
+            position: relative;
+        }
+        .cup {
+            width: 80px;
+            height: 100px;
+            margin: 10px;
+            background: linear-gradient(145deg, #1e90ff, #007bb5);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: transform 0.3s ease-in-out;
+            position: relative;
+            box-shadow: 3px 3px 10px rgba(0, 0, 0, 0.3);
+        }
+        .cup:hover {
+            transform: scale(1.1);
+        }
+        .ball {
+            width: 30px;
+            height: 30px;
+            background-color: red;
+            border-radius: 50%;
+            position: absolute;
+            bottom: -10px;
+            display: none;
+        }
+        .controls {
+            margin-top: 20px;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+        }
+        button {
+            background-color: #27ae60;
+            color: white;
+            padding: 10px;
+            margin: 5px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #219150;
+        }
+        .shuffle-animation {
+            animation: moveCups 0.8s ease-in-out;
+        }
+        @keyframes moveCups {
+            0% { transform: translateY(0); }
+            50% { transform: translateY(-30px); }
+            100% { transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+    <h1>Shell Game</h1>
+    <p>Welcome, <span id="username"></span>! Choose a cup to find the ball.</p>
+    
+    <div class="controls">
+        <label>Trials:</label>
+        <select id="trials">
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+        </select>
+        <label>Difficulty:</label>
+        <select id="difficulty">
+            <option value="6">Easy (6 cups)</option>
+            <option value="12">Hard (12 cups)</option>
+        </select>
+        <button onclick="startGame()">Start Game</button>
+    </div>
+
+    <div class="game-container" id="gameBoard"></div>
+
+    <script>
+        document.getElementById("username").textContent = localStorage.getItem("username") || "Guest";
+
+        let cups = [];
+        let ballPosition = -1;
+        let trials = 1;
+        let reward = 100;
+        let selectedDifficulty = 6;
+
+        function startGame() {
+            const gameBoard = document.getElementById("gameBoard");
+            gameBoard.innerHTML = "";
+
+            trials = parseInt(document.getElementById("trials").value);
+            selectedDifficulty = parseInt(document.getElementById("difficulty").value);
+            reward = 100 - (trials - 1) * 30;
+
+            cups = [];
+            for (let i = 0; i < selectedDifficulty; i++) {
+                let cup = document.createElement("div");
+                cup.classList.add("cup");
+                cup.style.background = getRandomGradient();
+                cup.setAttribute("data-index", i);
+                cup.onclick = () => checkCup(i);
+                
+                let ball = document.createElement("div");
+                ball.classList.add("ball");
+                cup.appendChild(ball);
+
+                cups.push(cup);
+                gameBoard.appendChild(cup);
+            }
+
+            placeBall();
+            setTimeout(shuffleCups, 1500);
+        }
+
+        function placeBall() {
+            ballPosition = Math.floor(Math.random() * cups.length);
+            let ball = cups[ballPosition].querySelector(".ball");
+            ball.style.display = "block";
+
+            setTimeout(() => {
+                ball.style.display = "none";
+            }, 1000);
+        }
+
+        function shuffleCups() {
+            let indexes = cups.map((_, index) => index);
+            indexes.sort(() => Math.random() - 0.5);
+
+            let newBallPosition = indexes.find(index => index !== ballPosition);
+            ballPosition = newBallPosition;
+
+            let shuffleCount = 10;
+            let interval = setInterval(() => {
+                for (let i = 0; i < cups.length; i++) {
+                    let swapIndex = Math.floor(Math.random() * cups.length);
+                    let temp = cups[i].style.transform;
+                    cups[i].style.transform = cups[swapIndex].style.transform;
+                    cups[swapIndex].style.transform = temp;
+                }
+                shuffleCount--;
+                if (shuffleCount <= 0) clearInterval(interval);
+            }, 300);
+        }
+
+        function checkCup(index) {
+            if (trials <= 0) {
+                alert("No more trials left!");
+                return;
+            }
+
+            if (index === ballPosition) {
+                alert(`You found the ball! You win ${reward} points.`);
+                localStorage.setItem("score", (parseInt(localStorage.getItem("score") || 0) + reward));
+            } else {
+                trials--;
+                alert(`Wrong choice! ${trials} trials left.`);
+            }
+        }
+
+        function getRandomGradient() {
+            const colors = [
+                ["#f39c12", "#e67e22"],
+                ["#e74c3c", "#c0392b"],
+                ["#9b59b6", "#8e44ad"],
+                ["#3498db", "#2980b9"],
+                ["#2ecc71", "#27ae60"],
+                ["#1abc9c", "#16a085"]
+            ];
+            let pair = colors[Math.floor(Math.random() * colors.length)];
+            return `linear-gradient(145deg, ${pair[0]}, ${pair[1]})`;
+        }
+    </script>
+</body>
+</html>
